@@ -1,0 +1,323 @@
+{
+  "shows": [
+    {
+      "name": "House Team Spotlight",
+      "slug": "house-team-spotlight",
+      "description": "A Spotlight on Home-Grown Improv Teams\n\nArcade Comedy Theater presents the House Team Spotlight — a show featuring a rotating set of our very own improv comedy teams. Each performance features an advanced-level house team jumping into the spotlight and bringing their unique brand of comedy. Some weeks, you will see lively short-form games with plenty of opportunities for the audience to get involved. Some weeks, you can kick back and watch a dynamic long-form improv set unfold based on a single suggestion. All of it adds up to a unique night of live comedy that burns bright for 75 minutes!\n\nRuntime: 75 minutes\n\nTickets $15 / $10 college students\nAges 16 & up\nBYOB 21+",
+      "short_description": "One of Arcade's advanced house improv teams takes the spotlight for 75 minutes of short-form and long-form comedy.",
+      "default_price": 15.0,
+      "default_capacity": 80,
+      "default_duration_minutes": 75,
+      "tags": [
+        "improv",
+        "comedy"
+      ],
+      "image_url": "https://www.arcadecomedytheater.com/wp-content/uploads/2025/08/Spotlight-2025Fall.png"
+    },
+    {
+      "name": "House Team Hot Spot",
+      "slug": "house-team-hot-spot",
+      "description": "A Trio of Home-Grown Improv Teams\n\nArcade Comedy Theater presents the House Team Hot Spot — a show featuring a rotating set of our very own improv comedy teams. Each performance features house teams jumping into the hot spot and bringing their unique brand of comedy. See lively short-form games with plenty of opportunities for the audience to get involved; kick back and watch a dynamic long-form improv set unfold based on a single suggestion. All of it adds up to a unique night of live comedy that burns bright for 75 minutes!\n\nRuntime: 75 minutes\n\nTickets $15 / $10 college students\nAges 16 & up\nBYOB 21+",
+      "short_description": "Three Arcade house improv teams take the Hot Spot for a night of short-form and long-form comedy.",
+      "default_price": 15.0,
+      "default_capacity": 80,
+      "default_duration_minutes": 75,
+      "tags": [
+        "improv",
+        "comedy"
+      ],
+      "image_url": "https://www.arcadecomedytheater.com/wp-content/uploads/2025/08/HotSpot-2025Fall.png"
+    },
+    {
+      "name": "Penny Arcade",
+      "slug": "penny-arcade-kids-comedy-show",
+      "description": "Be silly! Get creative! A watch-and-play comedy show for kids!\n\nArcade Comedy Theater presents Penny Arcade, an interactive comedy experience ideal for kids 4 to 8 years old! This 45-minute show encourages children and their parents to unleash their imaginations and sense of humor. Penny Arcade fosters collaboration, listening skills, and silliness for everyone at any age through a hands-on approach to theater. Whether your child is a natural performer or a thoughtful observer, the show adapts to each individual, giving everyone a unique and hilarious experience they'll talk about for a long time! Penny Arcade is a fun and innovative show you won't find anywhere else in the city.\n\nImportant information:\n\n- Runtime: 60 minutes\n- Tickets $12 per person (discounts for groups of 4 or 6)\n- Suitable for ALL ages\n- Parents must be present at all times\n- The theater is accessible for guests in wheelchairs and strollers\n- Child-appropriate concessions available",
+      "short_description": "An interactive comedy experience for kids aged 4-8 and their families. Silly, creative, and endlessly fun.",
+      "default_price": 12.0,
+      "default_capacity": 80,
+      "default_duration_minutes": 60,
+      "tags": [
+        "improv",
+        "comedy",
+        "kids",
+        "family"
+      ],
+      "image_url": "https://www.arcadecomedytheater.com/wp-content/uploads/2024/03/Penny-2024-ALL-1080x1080-1.jpg"
+    },
+    {
+      "name": "New Blood Student Showcase",
+      "slug": "new-blood-student-showcase",
+      "description": "A night of fresh new comedy by the future stars of the Pittsburgh scene. See who's next in improv in this special showcase of Arcade Comedy Theater's new blood!",
+      "short_description": "See Pittsburgh's next comedy stars in this special student improv showcase.",
+      "default_price": 5.0,
+      "default_capacity": 80,
+      "default_duration_minutes": 60,
+      "tags": [
+        "improv",
+        "comedy",
+        "student"
+      ],
+      "image_url": "https://www.arcadecomedytheater.com/wp-content/uploads/2023/04/NewBlood-1080x1080.jpeg"
+    },
+    {
+      "name": "Knights of the Arcade: Epic D&D Adventure",
+      "slug": "knights-of-the-arcade-epic-dd-adventure",
+      "description": "Join Knights of the Arcade for another hilarious D&D comedy adventure! One of Pittsburgh's longest running and best-selling comedy shows! A recurring cast of characters are joined by special guests and led by their maniacal dungeon master. Where they're going, who they fight, and if they ultimately succeed is decided upon live dice that are rolled and projected on the theater wall.",
+      "short_description": "Pittsburgh's longest-running D&D comedy show. Live dice rolls projected on stage determine the fate of our heroes!",
+      "default_price": 15.0,
+      "default_capacity": 80,
+      "default_duration_minutes": 90,
+      "tags": [
+        "improv",
+        "comedy",
+        "special",
+        "dnd"
+      ],
+      "image_url": "https://www.arcadecomedytheater.com/wp-content/uploads/2021/10/KotA-Circle-Logo_800x.jpg"
+    },
+    {
+      "name": "Sketch Comedy Lab",
+      "slug": "sketch-comedy-lab",
+      "description": "SKETCH COMEDY INCUBATOR SPACE\n\nA staged reading for brand new sketch comedy. The Sketch Comedy Laboratory is an incubator space presented by Arcade Comedy Theater. Every other month, Sketch Lab features sketches from writers who have attended our writers room and are performed by a roster of comedic actors. See cutting edge comedy and new scripted works written by some of the city's funniest up-and-coming writers.\n\nRuntime: 75 minutes\n\nTickets $10 / $5 college students\nAges 16 & up\nBYOB 21+ (fee waived)",
+      "short_description": "An incubator for brand-new sketch comedy featuring cutting-edge scripted works from Pittsburgh's up-and-coming writers.",
+      "default_price": 10.0,
+      "default_capacity": 80,
+      "default_duration_minutes": 75,
+      "tags": [
+        "sketch",
+        "comedy",
+        "incubator"
+      ],
+      "image_url": "https://www.arcadecomedytheater.com/wp-content/uploads/2023/05/sketch-lab-img-sq-2.png"
+    },
+    {
+      "name": "Level Up Stand-Up",
+      "slug": "level-up-stand-up",
+      "description": "Get ready to laugh like never before at Arcade Comedy Theater's electrifying Level Up Stand-Up showcase! Every month, our stage lights up with a fresh lineup of Pittsburgh's funniest comics, rising stars, and special touring guests. Enjoy an unbeatable night of comedy for just $15 (with $5 BYOB). Join us in the Cultural District for an unforgettable, fun-filled evening that promises non-stop laughter and incredible entertainment!\n\nHosted by Matty Malloy and featuring TBA",
+      "short_description": "A monthly stand-up showcase featuring Pittsburgh's funniest comics, rising stars, and special touring guests.",
+      "default_price": 15.0,
+      "default_capacity": 80,
+      "default_duration_minutes": 75,
+      "tags": [
+        "standup",
+        "comedy"
+      ],
+      "image_url": "https://www.arcadecomedytheater.com/wp-content/uploads/2014/05/ArcadeFinalLogo.png"
+    },
+    {
+      "name": "The Stand-Up Laboratory",
+      "slug": "the-stand-up-laboratory",
+      "description": "The Stand-Up Laboratory is a new incubator space presented by Arcade Comedy Theater. Every month, the Lab will present a mix of feature comics and a roster of comedians chosen from online submissions. Enjoy a night of comedy highlighting newer material from Pittsburgh's best comedians and its rising stars.",
+      "short_description": "A monthly stand-up incubator spotlighting newer material from Pittsburgh's best comedians and its rising stars.",
+      "default_price": 10.0,
+      "default_capacity": 80,
+      "default_duration_minutes": 75,
+      "tags": [
+        "standup",
+        "comedy",
+        "incubator"
+      ],
+      "image_url": "https://www.arcadecomedytheater.com/wp-content/uploads/2023/10/ACT10-StandUpLab.jpg"
+    },
+    {
+      "name": "Irony City: Am I the Jagoff?",
+      "slug": "irony-city-am-i-the-jagoff",
+      "description": "Join veteran comedy troupe Irony City as they deftly navigate social missteps on the first Saturday of each month. We've all been there: acted out at a wedding when there was no cookie table, ordered fries on a salad at a fancy restaurant, or dared to move a parking chair - afterward wondering, \"Am I the Jagoff?\"\n\nEach show, the audience shares stories about some real Jagoff moments, sparking hilarious improvised scenes from Irony City.\n\nRuntime: 75 minutes\n\nTickets $15 / $10 college students\nAges 16 & up\nBYOB 21+",
+      "short_description": "Veteran troupe Irony City turns real audience stories of social missteps into hilarious improv scenes.",
+      "default_price": 15.0,
+      "default_capacity": 80,
+      "default_duration_minutes": 75,
+      "tags": [
+        "improv",
+        "comedy"
+      ],
+      "image_url": "https://www.arcadecomedytheater.com/wp-content/uploads/2025/08/irony-city-am-i-the-jagoff.jpg"
+    },
+    {
+      "name": "Under the Radar",
+      "slug": "under-the-radar",
+      "description": "Join us for an entertaining night of hilarious comedy at Under The Radar and support Pittsburgh's vibrant improv scene! This monthly showcase of independent teams features a rotating lineup and a supportive atmosphere. You'll experience a dynamic range of comedic styles and performances each month. Don't miss out on the chance to see emerging talent and enjoy an evening of unscripted fun!",
+      "short_description": "A monthly showcase of independent Pittsburgh improv teams. Fresh styles, emerging talent, unscripted fun.",
+      "default_price": 10.0,
+      "default_capacity": 80,
+      "default_duration_minutes": 75,
+      "tags": [
+        "improv",
+        "comedy",
+        "independent"
+      ],
+      "image_url": "https://www.arcadecomedytheater.com/wp-content/uploads/2026/04/Under-The-Radar-Logo.png"
+    },
+    {
+      "name": "UNIQUE",
+      "slug": "unique",
+      "description": "Join us for a hilarious night of anecdotes and improv provided by storytellers and performers who have two things in common: each is UNIQUE, and they all have disabilities!\n\nFeaturing monologists recruited from the disability and mental health community who share real stories about their lives and a cast of improvisers with disabilities ranging from: stuttering disorders, autism, PTSD, ADHD, anxiety disorders, depression, and many others!\n\nStudies show that 1 in 4 individuals have a disability (currently over 1 billion people worldwide), 1 in 3 people will develop a disability within their lifetime, and 1 in 4 individuals experience a mental health episode annually. Let's come out and embrace this community on stage and welcome them into our improv world!\n\nUNIQUE is hosted and directed by Kunal Mahajan, a person who has had a lifelong stuttering disability.",
+      "short_description": "An improv show featuring storytellers and performers from the disability and mental health community.",
+      "default_price": 15.0,
+      "default_capacity": 80,
+      "default_duration_minutes": 75,
+      "tags": [
+        "improv",
+        "comedy",
+        "special"
+      ],
+      "image_url": "https://www.arcadecomedytheater.com/wp-content/uploads/2024/05/IMG_7935.jpeg"
+    },
+    {
+      "name": "Well Known Strangers",
+      "slug": "well-known-strangers",
+      "description": "Experienced improvisers Well Known Strangers get a suggestion from the audience to inspire laugh-out-loud stories and characters. Don't miss this night of clever and absurd scenes by this fun-loving team of goofs.",
+      "short_description": "Experienced improvisers bring clever, absurd scenes inspired by a single audience suggestion.",
+      "default_price": 15.0,
+      "default_capacity": 80,
+      "default_duration_minutes": 75,
+      "tags": [
+        "improv",
+        "comedy"
+      ],
+      "image_url": "https://www.arcadecomedytheater.com/wp-content/uploads/2024/10/Strangers-handshake-image.jpg"
+    },
+    {
+      "name": "Arcade Hootenanny",
+      "slug": "arcade-hootenanny",
+      "description": "The Arcade Hootenanny is styled after the classic Chicago-style improv show featuring monologist-inspired scenes. A storyteller tells real-life tales and improvisers present a fast & funny set inspired by elements from the story. Featuring special guest",
+      "short_description": "Chicago-style improv where a real storyteller's tales inspire a fast, funny set from our improvisers.",
+      "default_price": 15.0,
+      "default_capacity": 80,
+      "default_duration_minutes": 75,
+      "tags": [
+        "improv",
+        "comedy"
+      ],
+      "image_url": "https://www.arcadecomedytheater.com/wp-content/uploads/2023/03/Hootenanny-Generic-300x300.jpg"
+    },
+    {
+      "name": "Beta Stage",
+      "slug": "beta-stage",
+      "description": "Support emerging talent and join us for Beta Stage, a monthly showcase of fresh comedy! Experience the excitement of being a part of the creative process as we provide a platform for producers to present and refine new ideas in front of a live audience. New concepts get the opportunity to be workshopped live, allowing for real-time feedback and audience interaction. This show is a part of Arcade's incubator series, which is all about experimentation, trying new things, and elevating the art of comedy. This monthly showcase is the place to see tomorrow's comedy today!",
+      "short_description": "A monthly incubator showcase where new comedy concepts are workshopped live in front of a real audience.",
+      "default_price": 10.0,
+      "default_capacity": 80,
+      "default_duration_minutes": 75,
+      "tags": [
+        "comedy",
+        "showcase",
+        "incubator"
+      ],
+      "image_url": "https://www.arcadecomedytheater.com/wp-content/uploads/2024/08/BETALOGO3.jpeg"
+    },
+    {
+      "name": "Your Act",
+      "slug": "your-act",
+      "description": "Tonight, the A.C.T. stage is yours! Bring your improv teams, sketch group, or stand-up act for an open mic-style show where the lineup is created on the spot. A perfect opportunity for artists to try something new in a short set and for audiences to see some experimental and cutting edge comedy.\n\nThe evening is guided by Nonsense!",
+      "short_description": "An open mic-style show where improv teams, sketch groups, and stand-ups try something new on the A.C.T. stage.",
+      "default_price": 5.0,
+      "default_capacity": 80,
+      "default_duration_minutes": 75,
+      "tags": [
+        "improv",
+        "sketch",
+        "standup",
+        "open-mic"
+      ],
+      "image_url": "https://www.arcadecomedytheater.com/wp-content/uploads/2023/03/YOUR-ACT.jpg"
+    },
+    {
+      "name": "Comedy Bingo with Barbara, a Mother",
+      "slug": "comedy-bingo-with-barbara-a-mother",
+      "description": "Comedy Bingo Night features an evening comedy, bingo, and PRIZES! Hosted by long-form improv team Barbara, a Mother.",
+      "short_description": "An evening of comedy, bingo, and prizes hosted by long-form improv team Barbara, a Mother.",
+      "default_price": 15.0,
+      "default_capacity": 80,
+      "default_duration_minutes": 75,
+      "tags": [
+        "comedy",
+        "improv",
+        "special"
+      ],
+      "image_url": "https://www.arcadecomedytheater.com/wp-content/uploads/2026/03/comedybingobam.png"
+    },
+    {
+      "name": "Co-Workers!",
+      "slug": "coworkers",
+      "description": "Co-Workers! Is a long form narrative show made up of a combination of short form and long form improv, creating the best type of entertainment...middle management comedy!",
+      "short_description": "A long-form narrative show blending short and long form improv into the best middle management comedy around.",
+      "default_price": 15.0,
+      "default_capacity": 80,
+      "default_duration_minutes": 75,
+      "tags": [
+        "improv",
+        "comedy"
+      ],
+      "image_url": "https://www.arcadecomedytheater.com/wp-content/uploads/2026/01/IMG_4156.jpeg"
+    },
+    {
+      "name": "Comedy Confidential with Brittany Alexis",
+      "slug": "comedy-confidential-with-brittany-alexis",
+      "description": "Arcade Comedy Theater presents Comedy Confidential, a showcase of Pittsburgh's brightest comedic talents!\n\nBrittany Alexis brings some of her funniest few friends to the stage for an entertaining night of stand-up. This show promises a lineup of hilarious performances that will keep you laughing long after the show ends. Whether you're a lifelong comedy fan or just looking for a fun night out, Comedy Confidential is the perfect escape into the world of humor. Come for an unforgettable evening filled with surprises, camaraderie, and, of course, a whole lot of laughter!",
+      "short_description": "Brittany Alexis curates a hilarious night of stand-up showcasing Pittsburgh's brightest comedic talents.",
+      "default_price": 15.0,
+      "default_capacity": 80,
+      "default_duration_minutes": 75,
+      "tags": [
+        "standup",
+        "comedy"
+      ],
+      "image_url": "https://www.arcadecomedytheater.com/wp-content/uploads/2025/01/Comedy-Confidential.png"
+    },
+    {
+      "name": "Duo: Two Ways",
+      "slug": "duo-two-ways",
+      "description": "Watch veteran improvisers Fred Brown and Scott Pettis perform two very different improv styles. First, the form known as the \"TJ & Dave\" - patient, theatrical, naturalistic. Second, the \"Zumpf\" - fast, bold, always moving. Whether you're simply looking for an entertaining show or you're a dedicated improv nerd, this show will leave you thinking, \"wow.\" Scott was trained in Chicago. Fred was trained in Philadelphia. They met in the spring of 2023. They realized, \"hey we really like performing together.\" So they are doing that.",
+      "short_description": "Veteran improvisers Fred Brown and Scott Pettis face off in two contrasting improv styles in one unforgettable show.",
+      "default_price": 15.0,
+      "default_capacity": 80,
+      "default_duration_minutes": 75,
+      "tags": [
+        "improv",
+        "comedy"
+      ],
+      "image_url": "https://www.arcadecomedytheater.com/wp-content/uploads/2024/10/DUO-square.png"
+    },
+    {
+      "name": "Five Minutes or Bust",
+      "slug": "five-minutes-or-bust",
+      "description": "How long can you last? Do you know how to please a crowd, or are you a premature bomber? Five Minutes or Bust is a consensual comedy show where each comedian has a chance to shoot their shot and try to last a full five minutes on stage. Each month, a new Joke Master will listen to audience laughter and decide if it's enough to keep the comic on stage. If the audience isn't laughing, the performer will be given an early ejection by the Joke Master. This is a true test for comics to flex their comedic prowess and prove they can perform under pressure.\n\nJoke Master:\nFeature:\nProduced and Hosted by Kimberly Bennett and Matty Malloy",
+      "short_description": "A high-stakes comedy show where comics must keep the crowd laughing for five full minutes - or get the boot.",
+      "default_price": 10.0,
+      "default_capacity": 80,
+      "default_duration_minutes": 75,
+      "tags": [
+        "standup",
+        "comedy"
+      ]
+    },
+    {
+      "name": "Got Rights?",
+      "slug": "got-rights",
+      "description": "Arcade Comedy Theater presents Got Rights? - a monthly comedy open mic that celebrates and centers comedy from queer individuals, women, and femmes! Join us upstairs in our black box theater every third Thursday at 9 pm and witness some of Pittsburgh's most talented and available comics work through their material. An open mic is not a show. It is practice, a place to try new jokes, adjust old ones, and, most importantly, take risks and make mistakes. Whether it's good, bad, funny, or crass, YOU decide if you want to laugh. Got Rights? is the mic to support and enjoy the incredible talent from our vibrant comedy community. Bring your friends, your laughter, and your keen comedy judgment for a night of fresh perspectives and bold humor.",
+      "short_description": "A monthly open mic celebrating comedy from queer individuals, women, and femmes. A space to try new material and take risks.",
+      "default_price": 5.0,
+      "default_capacity": 80,
+      "default_duration_minutes": 75,
+      "tags": [
+        "standup",
+        "comedy",
+        "open-mic"
+      ],
+      "image_url": "https://www.arcadecomedytheater.com/wp-content/uploads/2025/02/Untitled-design.png"
+    },
+    {
+      "name": "Lucky Draw",
+      "slug": "lucky-draw",
+      "description": "",
+      "short_description": "",
+      "default_price": 15.0,
+      "default_capacity": 80,
+      "default_duration_minutes": 75,
+      "tags": [
+        "comedy"
+      ]
+    }
+  ]
+}

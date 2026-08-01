@@ -1,0 +1,9 @@
+.env
+__pycache__/
+*.pyc
+
+# editor scratch files (a Kate swap of .env can hold its contents)
+*.kate-swp
+.*.kate-swp
+*.swp
+*~

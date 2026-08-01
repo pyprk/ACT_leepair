@@ -9,8 +9,13 @@ Web form: select a show → auto-fill details → create a Leap ticket event + A
   level (`POST /price_levels`), and returns the public ticket URL. Also manages
   the show catalog (`shows.json`).
 - **Frontend (`templates/index.html`)** — after the backend returns the ticket
-  URL, the browser posts the record directly to the Airtable **Schedule** table
-  (config is in the `const AT = {...}` block at the top of the script).
+  URL, the browser posts the record directly to the Airtable **Schedule** table.
+  The `const AT = {...}` block is filled in by Flask from `AT_API_KEY`,
+  `AT_BASE_ID` and `AT_TABLE` in `.env` — don't hardcode credentials there.
+
+  Because the browser talks to Airtable directly, the token is served to every
+  client that loads the page. Fine on a trusted LAN; if this ever goes public,
+  proxy the Airtable write through `app.py` instead.
 
 ## Setup
 
