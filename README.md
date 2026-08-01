@@ -45,6 +45,42 @@ you pick `LEAP_SELLER_ID` and `LEAP_VENUE_ID` from your account.
 If Leap calls ever start failing with 401, generate a fresh token in the
 admin and rerun the script.
 
+## Current status
+
+The app is complete but **not yet able to create events** — one credential is
+missing. Picking this up:
+
+**Working**
+
+- The Leap Integration Token authenticates (sent as the `X-API-Token` header).
+- `GET /venues` returns the full venue list, so `/api/venues` works.
+
+**Blocked — `LEAP_SELLER_ID` is unknown**
+
+`GET /sellers` returns `{"data":[]}` for our token even though the same token
+authenticates fine against `/venues` (a bad token gives 401, so this is an
+empty result, not an auth failure). `app.py` puts the seller ID in the
+`relationships` block of every event create, so nothing can be created until
+it's found. Things to try:
+
+```bash
+# the sellers relationship hanging off any venue
+curl -H "X-API-Token: $LEAP_API_TOKEN" -H "Accept: application/vnd.api+json" \
+  https://www.showclix.com/api/venues/47341/sellers
+```
+
+Failing that, the seller ID is visible in the admin UI URL at
+<https://admin.leapevents.com>, or Leap support can widen the token's scope.
+
+**Gotchas already found**
+
+- `GET /series` returns 404 — that endpoint doesn't exist on this API host.
+  `/api/series` catches it and returns an empty list, so it's harmless.
+- The venue list contains duplicates: *Arcade Comedy Theater: Downstairs* is
+  both `47341` and `82097`, and Upstairs is both `49108` and `86691`. There's
+  also a `DELETE ME` venue at `47342`. Confirm which one has live events
+  (`/venues/<id>/events`) before setting `LEAP_VENUE_ID`.
+
 ## Running
 
 ```bash
