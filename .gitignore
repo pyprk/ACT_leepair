@@ -7,3 +7,6 @@ __pycache__/
 .*.kate-swp
 *.swp
 *~
+
+# CIFS/FUSE orphans left when a file is deleted while still open
+.fuse_hidden*
