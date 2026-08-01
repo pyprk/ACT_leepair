@@ -2,15 +2,11 @@
 """
 Set up Leap (ShowClix) API credentials in .env.
 
-The old self-service endpoint (POST /api/registration) was removed when
-ShowClix became Leap. The current mechanism is an "Integration Token"
-generated in the Leap Admin UI:
+The token is not self-service — Leap issues it and hands it over
+directly (ours came via our Leap contact). Ask for a fresh one if calls
+start failing with 401.
 
-    1. Log in at https://admin.leapevents.com
-    2. Go to  https://admin.leapevents.com/user
-    3. Generate an Integration Token and copy it
-
-Then run this script and paste the token. It validates the token, writes
+Run this script and paste the token. It validates the token, writes
 LEAP_API_TOKEN to .env, and helps fill in LEAP_SELLER_ID / LEAP_VENUE_ID.
 
 Run it in a terminal:
@@ -68,9 +64,8 @@ def get_collection(base: str, resource: str, token: str):
 def main() -> None:
     print("Leap / ShowClix API credential setup")
     print("────────────────────────────────────")
-    print("1. Log in at https://admin.leapevents.com")
-    print("2. Open   https://admin.leapevents.com/user")
-    print("3. Generate an Integration Token and copy it\n")
+    print("The token comes from Leap directly — it is not self-service.")
+    print("Ask our Leap contact for one if you don't have it yet.\n")
     while True:
         token = input("Paste the Integration Token (or 'q' to quit): ").strip()
         if token.lower() == "q":
@@ -80,8 +75,8 @@ def main() -> None:
             break
         print("\nThat doesn't look like a token — a token is a long string of")
         print("letters and numbers, e.g. 3e9fa1980a283fe902c83a8929d0ae91.")
-        print("Generate one on https://admin.leapevents.com/user and paste the")
-        print("whole string here.\n")
+        print("Ask our Leap contact for the token and paste the whole")
+        print("string here.\n")
 
     # ── Validate the token by listing venues ──────────────────────────────
     base = None

@@ -25,25 +25,21 @@ cp .env.example .env
 # fill in .env
 ```
 
-## Getting a Leap API token
+## Leap API token
 
-Tokens are self-service in the Leap Admin UI (the old ShowClix
-`POST /api/registration` endpoint no longer exists):
+The token is **not** self-service — Leap issues it and hands it over directly.
+Ours came from our Leap contact (Mike, via Mindy). If calls start failing with
+401, ask for a fresh one rather than trying to generate one in the admin UI.
 
-1. Log in at <https://admin.leapevents.com>
-2. Go to <https://admin.leapevents.com/user>
-3. Generate an **Integration Token** and copy it
-4. Run the setup helper and paste it:
+Once you have it, the setup helper validates it and fills in `.env`:
 
 ```bash
 python get_leap_token.py
 ```
 
-The script validates the token, writes `LEAP_API_TOKEN` to `.env`, and helps
-you pick `LEAP_SELLER_ID` and `LEAP_VENUE_ID` from your account.
-
-If Leap calls ever start failing with 401, generate a fresh token in the
-admin and rerun the script.
+It confirms the token works, writes `LEAP_API_TOKEN`, and lists venues so you
+can pick `LEAP_VENUE_ID`. It also tries to list sellers for `LEAP_SELLER_ID`,
+but that currently comes back empty — see **Current status** below.
 
 ## Current status
 
