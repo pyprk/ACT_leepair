@@ -108,9 +108,20 @@ has: `name`, `slug`, `description`, `short_description`, `default_price`,
 
 ## After creation
 
-The Airtable Schedule record is created with `Status = Draft` and the ticket
-URL written into `Showclix Ticket Link`, so downstream sync (ghostlight →
-WordPress) picks it up as usual.
+The Airtable Schedule record is created with the ticket URL written into
+`Showclix Ticket Link`, and whatever **Status** is chosen in the form.
+
+**Status defaults to `Draft`, and a Draft record does not sync to WordPress.**
+That's deliberate — Draft is a review gate. Ghostlight reads this same table
+through the Airtable view `Wordpress Export- All Today Forward`, which excludes
+Draft, so the event stays off the website until someone sets `Status` to
+`Confirmed`. The next ghostlight run then creates the WordPress event.
+
+The form's ⑥ Airtable Status dropdown can set it to `Confirmed` (or any other
+value in the Airtable single-select) at creation time if the event is already
+reviewed and should publish straight away.
+
+If an event never shows up on the website, check its Status first.
 
 ## WordPress auth (future)
 

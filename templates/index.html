@@ -549,6 +549,22 @@
       <ul id="event_error_list"></ul>
     </div>
 
+    <!-- Airtable status -->
+    <div class="card">
+      <div class="card-title">⑥ Airtable Status</div>
+      <div class="field">
+        <label for="at_status">Status</label>
+        <select id="at_status">
+          <option value="Draft" selected>Draft</option>
+          <option value="Waiting for Producer">Waiting for Producer</option>
+          <option value="Confirmed">Confirmed</option>
+          <option value="Staffed (HM &amp; SM)">Staffed (HM &amp; SM)</option>
+          <option value="CANCELLED">CANCELLED</option>
+        </select>
+        <div class="field-hint">Draft (the default) keeps the event off the website &mdash; ghostlight&rsquo;s export view excludes Draft records. Switch to Confirmed once the event has been reviewed and the next sync will publish it.</div>
+      </div>
+    </div>
+
     <button class="submit-btn" id="submit_btn" onclick="submitEventForm()">
       Create Event
     </button>
@@ -704,7 +720,7 @@ async function postToAirtable(payload, show, ticketUrl) {
     'Date for Calendar': payload.event_date,
     'Showtime':          formatShowtime(payload.event_time),
     'Date for Name':     formatDateForName(payload.event_date),
-    'Status':            'Draft',
+    'Status':            document.getElementById('at_status')?.value || 'Draft',
   };
 
   if (dayName)     fields['Day of the Week']      = dayName;
