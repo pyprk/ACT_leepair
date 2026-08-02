@@ -61,9 +61,17 @@ Basic.
 
 Nothing needs restarting — WordPress picks up the route on the next request.
 
-## Not verified yet
+## How far it's been verified
 
-There's no PHP runtime on the machine this was written on, so the file has
-only been checked structurally (balanced braces, correct opening tag, no
-closing `?>`). It has never been executed. Load it on a staging site first if
-you have one, and watch for a fatal on plugin load.
+- **Syntax**: `php -l` under PHP 8.3 — this file and all 14 plugin files parse
+  cleanly.
+- **Load**: executed against a stubbed WordPress (see the harness described in
+  `HANDOVER.md`). It loads without a fatal and registers both routes.
+- **Behaviour**: the list returns untruncated descriptions; a missing slug 404s;
+  create returns 201; a description-only `POST` leaves the stored `image_url`
+  intact; an empty body on a new slug is refused with a 400 and writes no file;
+  the permission callback closes when the user lacks `edit_posts`.
+
+Not verified: behaviour inside a real WordPress — capability resolution,
+application-password auth, and REST route collisions with other plugins. Those
+need an actual install. Activate it somewhere disposable first if you can.

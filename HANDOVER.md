@@ -158,15 +158,19 @@ every client, which is why the form never touches them.
 
 ## Notes on the dev environment
 
-The tower box this was built on has **no `pip` and no `php`**, which shapes how
+The tower box this was built on had **no `pip` and no `php`**, which shapes how
 things were verified:
 
 - Flask was installed by borrowing the pip in
   `/mnt/tower/projects/venv/lib/python3.11/site-packages` with the system
   Python 3.12, installed to a scratch directory. `python3 -m venv` fails there
   (no `ensurepip`).
-- The Python and browser behaviour is genuinely tested. **The PHP has never
-  been executed** — only checked structurally. Load it on staging first.
+- `php-cli` was installed with apt during this work, so the PHP is now linted
+  (`php -l`, all 14 plugin files) and executed against a stubbed WordPress —
+  the harness lives in the scratch dir, not the repo; it stubs `add_action`,
+  `register_rest_route`, `sanitize_title`, `gl_desc_save` and friends. What
+  that cannot cover is real WordPress: capability resolution, application
+  password auth, and route collisions with other plugins.
 - The project lives on a **CIFS share**. Editors that write via
   temp-file-then-rename can fail there, leaving a file unlinked but still
   named — deletes and renames then return `ENOENT` until whatever holds the
