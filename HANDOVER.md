@@ -162,17 +162,24 @@ every client, which is why the form never touches them.
 ## Open items
 
 - [x] ~~Deploy the route to dev~~ — live and verified on wp.deadframe.xyz
-- [ ] Deploy the same two changes to **production** once dev has had some use
+- [ ] Deploy the plugin's REST route to **production** once dev has had some use
+      (the `GL_DESC_DIR` prerequisite is already done — see below)
 - [x] ~~Reconcile the dev and package plugin copies~~ — done 2026-08-02
 - [ ] Add the `GL_DESC_DIR` guard block to the **dev** `ghostlight.php` once
       the appdata share allows writes again (cosmetic — the default matches)
-- [ ] Diff the ghostlight repo against what is actually running on the
-      production host; nobody has had shell access to confirm they match
+- [x] ~~Diff the repo against production~~ — audited over SSH 2026-08-02.
+      `sync/` now matches production (which was ahead); `wordpress-plugin/` is
+      ahead of production and deploying it is an upgrade.
 - [x] ~~Put the plugin under version control~~ — https://github.com/pyprk/ghostlight
       now holds both the plugin and `ghostlight.py`, at
       `projects/work/arcade/ghostlight/`
-- [ ] When deploying to production, add the `GL_DESC_DIR` define to
-      `wp-config.php` FIRST — see step 0 of `ghostlight-deploy/DEPLOY.md`
+- [x] ~~Add the `GL_DESC_DIR` define to production's `wp-config.php`~~ — done
+      2026-08-02. Production had been running two description stores; edits in
+      wp-admin were never reaching the website. Merged (two files were adrift,
+      no wording conflicts) and pointed both sides at one directory.
+- [ ] Diff the ghostlight repo against production again after the next deploy;
+      the audit on 2026-08-02 found production's sync script *ahead* of every
+      local copy, so that direction is worth re-checking
 - [ ] `.env` currently points at wp.deadframe.xyz with the credentials from
       `/mnt/tower/projects/.env`; point it at production when that's deployed
 - [ ] Settle `got-rights`, then run `migrate_descriptions.py --apply`
