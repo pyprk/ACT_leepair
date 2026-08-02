@@ -72,6 +72,12 @@ Nothing needs restarting — WordPress picks up the route on the next request.
   intact; an empty body on a new slug is refused with a 400 and writes no file;
   the permission callback closes when the user lacks `edit_posts`.
 
-Not verified: behaviour inside a real WordPress — capability resolution,
-application-password auth, and REST route collisions with other plugins. Those
-need an actual install. Activate it somewhere disposable first if you can.
+- **In real WordPress**: deployed to wp.deadframe.xyz and exercised there.
+  The namespace registers, an unauthenticated call gets 401, an
+  application-password call lists all 26 shows with full text, a single GET
+  matches the list copy, a missing slug 404s, a description-only POST leaves
+  the stored `image_url` intact, and the write lands in `change_log.json` as
+  `updated (api)` beside the admin tab's own entries.
+
+Still unverified: the production install, which is a slightly different copy of
+the plugin — see `HANDOVER.md`.

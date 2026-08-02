@@ -79,13 +79,21 @@ The Python side is finished and pushed: the app now reads and writes the
 plugin's store, and `shows.json` is meant to keep only what ghostlight has no
 use for (short_description, price, capacity, duration, tags).
 
-**Two things have not happened yet:**
+**Deployed to dev, not to production.** The route is live on
+**wp.deadframe.xyz** (the theme dev environment, files at
+`/mnt/tower/appdata/wordpress`) and verified end to end there — see below. It
+is **not** on the production site yet.
 
-1. **The plugin route isn't deployed.** `wordpress-plugin/` holds the PHP and
-   its install instructions. Until it's on the server and `WP_USER`/`WP_APP_PW`
-   are set, the app shows a warning banner and falls back to a local cache.
-2. **`migrate_descriptions.py` hasn't been run.** `shows.json` still contains
-   the old copies.
+Note the two installs differ: dev defines
+`GL_DESC_DIR = WP_CONTENT_DIR . '/uploads/arcade-descriptions'`, production
+uses `/home/arcade2018/scripts/ghostlight/descriptions`. The route reads the
+constant so it works either way, but dev also carries `dev-bridge.php` and
+`template-editor.php` that the deploy package in
+`projects/work/arcade/ghostlight-wp-plugin/` doesn't — those two copies have
+drifted and it's worth reconciling before a production deploy.
+
+**`migrate_descriptions.py` still hasn't been run**, so `shows.json` keeps the
+old copies (21 of 22).
 
 This is safe to sit in: `keep_locally()` in `app.py` puts the shared fields
 back into `shows.json` whenever the store won't accept a write, so nothing is
@@ -135,9 +143,12 @@ every client, which is why the form never touches them.
 
 ## Open items
 
-- [ ] Deploy `wordpress-plugin/includes/rest-descriptions.php` and add its
-      `require_once` line — see `wordpress-plugin/README.md`
-- [ ] Create a WordPress application password, set `WP_USER` / `WP_APP_PW`
+- [x] ~~Deploy the route to dev~~ — live and verified on wp.deadframe.xyz
+- [ ] Deploy the same two changes to **production** once dev has had some use
+- [ ] Reconcile the dev plugin copy with
+      `projects/work/arcade/ghostlight-wp-plugin/` — they've drifted
+- [ ] `.env` currently points at wp.deadframe.xyz with the credentials from
+      `/mnt/tower/projects/.env`; point it at production when that's deployed
 - [ ] Settle `got-rights`, then run `migrate_descriptions.py --apply`
 - [ ] Get a non-rotating `LEAP_API_TOKEN`
 - [ ] **Venue cleanup** — 9 of 15 venues have no future events. `49108
