@@ -194,6 +194,108 @@ def leap_list(resource: str) -> list:
     ]
 
 
+# ── Airtable schema ───────────────────────────────────────────────────────────
+AT_API_BASE = "https://api.airtable.com/v0"
+
+# Types Airtable computes. Read-only no matter who is asking.
+AT_COMPUTED_TYPES = {
+    "formula", "rollup", "count", "autoNumber", "createdTime",
+    "lastModifiedTime", "createdBy", "lastModifiedBy", "button",
+    "lookup", "multipleLookupValues", "externalSyncSource",
+}
+
+# Columns the main form already derives from the show / date / venue inputs.
+AT_FIELDS_HANDLED = {
+    "Show Name", "Date for Calendar", "Showtime", "Date for Name", "Status",
+    "Day of the Week", "Year of Show", "Ticket Price", "Showclix Ticket Link",
+    "Stage",
+}
+
+# Ghostlight sets this itself after publishing to WordPress, and skips any
+# record where it is already true. Writing it here would hide the event from
+# the sync permanently.
+AT_FIELDS_OFF_LIMITS = {"Added to Wordpress"}
+
+_AT_FIELDS_CACHE = {}
+
+
+def airtable_get(path, params=None):
+    resp = requests.get(
+        f"{AT_API_BASE}/{path}",
+        headers={"Authorization": f"Bearer {AT_API_KEY}"},
+        params=params or {},
+        timeout=40,
+    )
+    resp.raise_for_status()
+    return resp.json()
+
+
+def airtable_all_records(table_id: str, primary: str) -> list:
+    """Every record in a table as {id, name}, following pagination."""
+    out, offset = [], None
+    while True:
+        params = {"pageSize": 100, "fields[]": primary}
+        if offset:
+            params["offset"] = offset
+        data = airtable_get(f"{AT_BASE_ID}/{table_id}", params)
+        for rec in data.get("records", []):
+            label = rec.get("fields", {}).get(primary)
+            out.append({
+                "id": rec["id"],
+                "name": str(label) if label not in (None, "") else "(untitled)",
+            })
+        offset = data.get("offset")
+        if not offset:
+            return out
+
+
+def build_airtable_field_spec():
+    """
+    Returns (spec, writable):
+      spec     — columns the form should render inputs for
+      writable — every column name that can be written at all, so the frontend
+                 can drop anything the table no longer has. Airtable rejects
+                 the whole record with a 422 if one field name is unknown, so a
+                 renamed or deleted column would otherwise break every submit.
+    """
+    meta = airtable_get(f"meta/bases/{AT_BASE_ID}/tables")
+    tables = {t["id"]: t for t in meta.get("tables", [])}
+    schedule = tables.get(AT_TABLE)
+    if not schedule:
+        raise RuntimeError(f"table {AT_TABLE} not visible to this API key")
+
+    spec, writable = [], []
+    for f in schedule.get("fields", []):
+        name, ftype = f.get("name"), f.get("type")
+        if ftype in AT_COMPUTED_TYPES:
+            continue
+        writable.append(name)
+        if name in AT_FIELDS_HANDLED or name in AT_FIELDS_OFF_LIMITS:
+            continue
+
+        entry = {"name": name, "type": ftype}
+        opts = f.get("options") or {}
+
+        if ftype in ("singleSelect", "multipleSelects"):
+            entry["choices"] = [c["name"] for c in opts.get("choices", []) if c.get("name")]
+        elif ftype == "multipleRecordLinks":
+            linked = tables.get(opts.get("linkedTableId"))
+            if not linked:
+                continue  # linked table not readable with this key
+            primary = next(
+                (x["name"] for x in linked.get("fields", [])
+                 if x.get("id") == linked.get("primaryFieldId")),
+                None,
+            )
+            if not primary:
+                continue
+            entry["linkedTable"] = linked.get("name")
+            entry["records"] = airtable_all_records(opts["linkedTableId"], primary)
+
+        spec.append(entry)
+    return spec, writable
+
+
 # ── Routes ────────────────────────────────────────────────────────────────────
 @app.route("/")
 def index():
@@ -218,6 +320,30 @@ def show_data(show_name: str):
     if not show:
         return jsonify({"error": "Show not found"}), 404
     return jsonify(show)
+
+
+@app.route("/api/airtable/fields")
+def api_airtable_fields():
+    """
+    Describe every Airtable column the form can write, so the frontend can
+    render inputs for them instead of hardcoding a list that drifts from the
+    base. Computed columns (formula/rollup/lookup/…) are skipped because no
+    client can write them; so is the field ghostlight owns.
+
+    Cached in memory — building it costs one metadata call plus a scan of each
+    linked table.
+    """
+    if not (AT_API_KEY and AT_BASE_ID and AT_TABLE):
+        return jsonify({"fields": [], "error": "Airtable env vars not set"}), 200
+    if _AT_FIELDS_CACHE.get("data") is not None:
+        return jsonify(_AT_FIELDS_CACHE["data"])
+    try:
+        spec, writable = build_airtable_field_spec()
+        payload = {"fields": spec, "writable": writable}
+        _AT_FIELDS_CACHE["data"] = payload
+        return jsonify(payload)
+    except Exception as e:
+        return jsonify({"fields": [], "writable": [], "error": str(e)}), 200
 
 
 @app.route("/api/venues")

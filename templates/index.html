@@ -227,6 +227,56 @@
     padding: 2px 0;
   }
 
+  .extra-summary {
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--accent2);
+    padding: 4px 0;
+    user-select: none;
+  }
+  .extra-summary:hover { color: #fff; }
+  #at_extra_fields { margin-top: 18px; }
+
+  .check-field {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 12px;
+  }
+  .check-field input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .check-field label {
+    margin: 0;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+  }
+  select[multiple] {
+    background-image: none;
+    padding-right: 12px;
+  }
+  .link-filter { margin-bottom: 6px; }
+
+  .saved-fields {
+    margin-top: 12px;
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    max-height: 240px;
+    overflow-y: auto;
+  }
+  .saved-fields .sf-row { display: flex; gap: 8px; padding: 1px 0; }
+  .saved-fields .sf-key { color: var(--accent2); flex-shrink: 0; }
+  .saved-fields .sf-val { color: var(--text-dim); word-break: break-word; }
+
   .row-2 {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -565,6 +615,17 @@
       </div>
     </div>
 
+    <!-- Every other writable column on the Schedule record -->
+    <div class="card">
+      <div class="card-title">⑦ More Airtable Fields <span style="color:#555;font-size:11px;text-transform:none;font-weight:400;">(all optional)</span></div>
+      <details>
+        <summary class="extra-summary">Show every other column on the Schedule record</summary>
+        <div id="at_extra_fields">
+          <div class="field-hint">Loading columns from Airtable…</div>
+        </div>
+      </details>
+    </div>
+
     <button class="submit-btn" id="submit_btn" onclick="submitEventForm()">
       Create Event
     </button>
@@ -740,6 +801,11 @@ async function postToAirtable(payload, show, ticketUrl) {
     fields['Time of Show for Calendar'] = `${payload.event_date}T${payload.event_time}:00.000`;
   }
 
+  // Everything from the "More Airtable Fields" panel. Only non-empty values
+  // are included, so untouched columns are left alone rather than blanked.
+  Object.assign(fields, collectExtraAirtableFields());
+  const safeFields = dropUnknownFields(fields);
+
   const resp = await fetch(
     `https://api.airtable.com/v0/${AT.baseId}/${AT.tableId}`,
     {
@@ -748,11 +814,13 @@ async function postToAirtable(payload, show, ticketUrl) {
         'Authorization': `Bearer ${AT.token}`,
         'Content-Type':  'application/json',
       },
-      body: JSON.stringify({ fields }),
+      body: JSON.stringify({ fields: safeFields }),
     }
   );
   const data = await resp.json();
   if (!resp.ok) throw new Error(data.error?.message || `Airtable ${resp.status}`);
+  data._sentFields = safeFields;              // what the result panel reports
+  data._droppedFields = atDroppedFields.slice();
   return data;
 }
 
@@ -999,6 +1067,11 @@ function renderEventResult(payload, leapData, atData, atErr) {
   // Airtable row
   if (atOk) {
     html += resultRow('ok', 'Airtable', `Schedule record created — <span style="font-family:monospace">${atData.id}</span>`);
+    html += renderSavedFields(atData._sentFields);
+    if (atData._droppedFields && atData._droppedFields.length) {
+      html += resultRow('warn', 'Skipped',
+        `Not columns on the Schedule table: ${escapeHtml(atData._droppedFields.join(', '))}`);
+    }
   } else {
     html += resultRow('err', 'Airtable', atErr || 'Failed to create record');
   }
@@ -1193,6 +1266,158 @@ function renderAddShowResult(show, serverSuccess, serverError) {
   resultDiv.innerHTML = html;
   resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
+
+// ─────────────────────────────────────────
+//  EXTRA AIRTABLE COLUMNS
+//  Rendered from the live schema (/api/airtable/fields) so the form covers
+//  every writable column without a hardcoded list that drifts from the base.
+//  Everything here is optional — blank inputs are simply not sent.
+// ─────────────────────────────────────────
+let atExtraSpec = [];
+let atWritableFields = [];   // every column name the table actually has
+let atDroppedFields = [];    // names skipped on the last submit
+
+// Airtable rejects the entire record with a 422 if any one field name is
+// unknown, so a column that was renamed or deleted in the base would break
+// every submit. Drop those instead, and report them in the result panel.
+function dropUnknownFields(fields) {
+  atDroppedFields = [];
+  if (!atWritableFields.length) return fields;   // schema unavailable — send as-is
+  const out = {};
+  Object.keys(fields).forEach(k => {
+    if (atWritableFields.indexOf(k) !== -1) out[k] = fields[k];
+    else atDroppedFields.push(k);
+  });
+  return out;
+}
+
+function atxId(name) {
+  return 'atx_' + name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+}
+
+function renderExtraField(f) {
+  const id = atxId(f.name);
+  const label = escapeHtml(f.name);
+
+  if (f.type === 'checkbox') {
+    return `<div class="check-field">
+      <input type="checkbox" id="${id}">
+      <label for="${id}">${label}</label>
+    </div>`;
+  }
+
+  const optTags = list => (list || [])
+    .map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+
+  let input = '';
+  let hint = '';
+
+  if (f.type === 'singleSelect') {
+    input = `<select id="${id}"><option value="">— none —</option>${optTags(f.choices)}</select>`;
+  } else if (f.type === 'multipleSelects') {
+    input = `<select id="${id}" multiple size="4">${optTags(f.choices)}</select>`;
+    hint = 'Ctrl/Cmd-click to pick more than one.';
+  } else if (f.type === 'multipleRecordLinks') {
+    const opts = (f.records || [])
+      .map(r => `<option value="${escapeHtml(r.id)}">${escapeHtml(r.name)}</option>`).join('');
+    const size = Math.min(8, Math.max(3, (f.records || []).length));
+    input = `<input type="text" class="link-filter" placeholder="Filter…" oninput="filterLinkOptions(this, '${id}')">` +
+            `<select id="${id}" multiple size="${size}">${opts}</select>`;
+    hint = `Linked to ${escapeHtml(f.linkedTable || '')} (${(f.records || []).length}) — Ctrl/Cmd-click for more than one.`;
+  } else if (f.type === 'number' || f.type === 'currency') {
+    const step = f.type === 'currency' ? '0.01' : '1';
+    const pre = f.type === 'currency' ? ' ($)' : '';
+    input = `<input type="number" id="${id}" step="${step}" placeholder="leave blank to skip${pre}">`;
+  } else if (f.type === 'multipleAttachments') {
+    input = `<input type="url" id="${id}" placeholder="https://… image URL">`;
+    hint = 'Airtable attaches the file from this URL.';
+  } else {
+    input = `<input type="text" id="${id}" placeholder="leave blank to skip">`;
+  }
+
+  const hintHtml = hint ? `<div class="field-hint">${hint}</div>` : '';
+  return `<div class="field"><label for="${id}">${label}</label>${input}${hintHtml}</div>`;
+}
+
+function filterLinkOptions(input, selectId) {
+  const q = input.value.trim().toLowerCase();
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  Array.from(sel.options).forEach(o => {
+    o.hidden = q !== '' && !o.textContent.toLowerCase().includes(q);
+  });
+}
+
+function collectExtraAirtableFields() {
+  const out = {};
+  atExtraSpec.forEach(f => {
+    const el = document.getElementById(atxId(f.name));
+    if (!el) return;
+    if (f.type === 'checkbox') {
+      if (el.checked) out[f.name] = true;
+    } else if (f.type === 'number' || f.type === 'currency') {
+      const n = parseFloat(el.value);
+      if (!isNaN(n)) out[f.name] = n;
+    } else if (f.type === 'multipleSelects' || f.type === 'multipleRecordLinks') {
+      const vals = Array.from(el.selectedOptions).map(o => o.value).filter(Boolean);
+      if (vals.length) out[f.name] = vals;
+    } else if (f.type === 'multipleAttachments') {
+      const v = el.value.trim();
+      if (v) out[f.name] = [{ url: v }];
+    } else {
+      const v = el.value.trim();
+      if (v) out[f.name] = v;
+    }
+  });
+  return out;
+}
+
+// Record links are stored as IDs; show the human name in the result panel.
+function prettyFieldValue(key, val) {
+  const spec = atExtraSpec.find(f => f.name === key);
+  const nameFor = id => {
+    const m = (spec && spec.records || []).find(r => r.id === id);
+    return m ? m.name : id;
+  };
+  if (Array.isArray(val)) {
+    return val.map(v => {
+      if (v && typeof v === 'object') return v.url || JSON.stringify(v);
+      return (spec && spec.type === 'multipleRecordLinks') ? nameFor(v) : v;
+    }).join(', ');
+  }
+  if (val && typeof val === 'object') return JSON.stringify(val);
+  return String(val);
+}
+
+function renderSavedFields(sent) {
+  if (!sent) return '';
+  const keys = Object.keys(sent).sort((a, b) => a.localeCompare(b));
+  if (!keys.length) return '';
+  const rows = keys.map(k =>
+    `<div class="sf-row"><span class="sf-key">${escapeHtml(k)}</span>` +
+    `<span class="sf-val">${escapeHtml(prettyFieldValue(k, sent[k]))}</span></div>`
+  ).join('');
+  return `<div class="saved-fields">${rows}</div>`;
+}
+
+fetch('/api/airtable/fields')
+  .then(r => r.json())
+  .then(d => {
+    const box = document.getElementById('at_extra_fields');
+    if (!box) return;
+    const list = d.fields || [];
+    if (d.error || !list.length) {
+      box.innerHTML = `<div class="field-hint">Could not load Airtable columns${d.error ? ': ' + escapeHtml(d.error) : ''}.</div>`;
+      return;
+    }
+    atExtraSpec = list;
+    atWritableFields = d.writable || [];
+    box.innerHTML = list.map(renderExtraField).join('');
+  })
+  .catch(() => {
+    const box = document.getElementById('at_extra_fields');
+    if (box) box.innerHTML = '<div class="field-hint">Could not load Airtable columns.</div>';
+  });
 
 function escapeHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');

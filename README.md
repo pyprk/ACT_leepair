@@ -96,8 +96,41 @@ It binds to `0.0.0.0`, so any machine on the network can reach it at
 | `GET /show-data/<name>` | Single show details |
 | `GET /api/venues` | Venues from your Leap account (frontend falls back to a hardcoded list if unavailable) |
 | `GET /api/series` | Series from your Leap account |
+| `GET /api/airtable/fields` | Writable Schedule columns + their options, read from the live base schema (cached) |
 | `POST /shows` | Append a new show to `shows.json` |
 | `POST /create` | Create the Leap event + price level, return ticket URL |
+
+## Airtable fields
+
+The form can write every column on the Schedule table that Airtable allows a
+client to write:
+
+- The numbered cards fill in the ten derived from the show, date and venue
+  (`Show Name`, `Date for Calendar`, `Showtime`, `Stage`, `Ticket Price`, …).
+- **⑦ More Airtable Fields** renders an input for every other writable column.
+  That list is not hardcoded — `/api/airtable/fields` reads the live base schema,
+  so a column added in Airtable appears here after a restart. Everything in the
+  panel is optional: blank inputs are not sent, so untouched columns are left
+  alone rather than blanked out.
+- Linked-record columns (House Manager, Performers/Cast, the producer fields)
+  become filterable multi-selects populated from the linked table.
+
+Two groups are deliberately absent. The ~30 computed columns (formula, rollup,
+lookup) cannot be written by anyone — that's why the promo blurbs and images
+come from linked *Producer Uploads* records instead of this form. And
+`Added to Wordpress` belongs to ghostlight, which sets it after publishing and
+skips any record where it is already true; writing it here would hide the event
+from the sync forever.
+
+Outgoing records are filtered against the schema before being sent, because
+Airtable rejects an entire record with a 422 if even one field name is unknown.
+Anything dropped is listed in the result panel, which also shows every field
+that was saved.
+
+**Known drift:** the form still tries to write `Time of Show for Calendar`,
+which no longer exists on the table. The filter drops it and says so, so creates
+succeed — but either recreate that column in Airtable or delete the line in
+`templates/index.html` to settle it.
 
 ## Editing shows
 
