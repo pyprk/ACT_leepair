@@ -84,13 +84,31 @@ use for (short_description, price, capacity, duration, tags).
 `/mnt/tower/appdata/wordpress`) and verified end to end there — see below. It
 is **not** on the production site yet.
 
-Note the two installs differ: dev defines
-`GL_DESC_DIR = WP_CONTENT_DIR . '/uploads/arcade-descriptions'`, production
-uses `/home/arcade2018/scripts/ghostlight/descriptions`. The route reads the
-constant so it works either way, but dev also carries `dev-bridge.php` and
-`template-editor.php` that the deploy package in
-`projects/work/arcade/ghostlight-wp-plugin/` doesn't — those two copies have
-drifted and it's worth reconciling before a production deploy.
+The dev and production plugin copies were reconciled on 2026-08-02. The
+deploy package at `projects/work/arcade/ghostlight-wp-plugin/` was two months
+stale — dev had moved on to v1.2.1 with an Email Template tab, rewritten admin
+CSS/JS, a run-sorting fix in `helpers.php`, and soft-delete for descriptions.
+The package now matches dev, with two deliberate exceptions:
+
+- **`includes/dev-bridge.php` is excluded.** It is a dev-only HTTP file-push
+  bridge with a hardcoded token; its own header says never deploy it. It is
+  loaded only when `wp_get_environment_type() === 'local'`, and
+  `template-editor.php` guards on `file_exists`, so its absence is harmless.
+- **`GL_DESC_DIR` is now overridable** rather than hardcoded. Dev had moved the
+  store to `wp-content/uploads/arcade-descriptions`; production keeps it beside
+  `ghostlight.py`. Shipping dev's value to production would have pointed the
+  plugin at a directory the sync script never reads, silently killing the
+  website's description fallback. Production must define it in `wp-config.php`
+  — see step 0 of `ghostlight-deploy/DEPLOY.md`.
+
+Two things still outstanding on that front. The **dev copy of `ghostlight.php`
+has not received the `GL_DESC_DIR` guard**: the appdata CIFS share started
+refusing writes to that directory partway through (the mount uses `forceuid`,
+so `ls` shows it writable while the server denies it — `dev-bridge.php` exists
+because of this exact split). Dev works fine as-is since the guard's default is
+dev's current value, but the two files differ by that one block until it can be
+written. And the **package is still not under version control anywhere**, which
+now matters more than it did, because it is the reconciled source of truth.
 
 **`migrate_descriptions.py` still hasn't been run**, so `shows.json` keeps the
 old copies (21 of 22).
@@ -145,8 +163,13 @@ every client, which is why the form never touches them.
 
 - [x] ~~Deploy the route to dev~~ — live and verified on wp.deadframe.xyz
 - [ ] Deploy the same two changes to **production** once dev has had some use
-- [ ] Reconcile the dev plugin copy with
-      `projects/work/arcade/ghostlight-wp-plugin/` — they've drifted
+- [x] ~~Reconcile the dev and package plugin copies~~ — done 2026-08-02
+- [ ] Add the `GL_DESC_DIR` guard block to the **dev** `ghostlight.php` once
+      the appdata share allows writes again (cosmetic — the default matches)
+- [ ] Put `ghostlight-wp-plugin/` under version control; it is now the
+      reconciled source of truth and lives on an unbacked share
+- [ ] When deploying to production, add the `GL_DESC_DIR` define to
+      `wp-config.php` FIRST — see step 0 of `ghostlight-deploy/DEPLOY.md`
 - [ ] `.env` currently points at wp.deadframe.xyz with the credentials from
       `/mnt/tower/projects/.env`; point it at production when that's deployed
 - [ ] Settle `got-rights`, then run `migrate_descriptions.py --apply`

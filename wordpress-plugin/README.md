@@ -48,6 +48,15 @@ Basic.
    require_once GL_PLUGIN_DIR . 'includes/rest-descriptions.php';
    ```
 
+   Already done in both the dev install and the deploy package at
+   `projects/work/arcade/ghostlight-wp-plugin/`, which were reconciled on
+   2026-08-02.
+
+   **Before activating on production**, define `GL_DESC_DIR` in
+   `wp-config.php` so the plugin and `ghostlight.py` agree on where
+   descriptions live — step 0 of `ghostlight-deploy/DEPLOY.md`. Skipping it
+   points the plugin at a directory the sync never reads.
+
 3. Create an application password: **Users → Profile → Application Passwords**
    in WordPress admin. Put it in this app's `.env` as `WP_USER` and
    `WP_APP_PW`.
@@ -79,5 +88,5 @@ Nothing needs restarting — WordPress picks up the route on the next request.
   the stored `image_url` intact, and the write lands in `change_log.json` as
   `updated (api)` beside the admin tab's own entries.
 
-Still unverified: the production install, which is a slightly different copy of
-the plugin — see `HANDOVER.md`.
+Still unverified: production. The package it would deploy from is now
+reconciled with dev and lints clean, but has not been run there.
