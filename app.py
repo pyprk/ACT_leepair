@@ -17,6 +17,7 @@ Leap V2 API notes (from Core API docs):
 """
 import json
 import os
+import re
 
 import requests
 from datetime import datetime, timedelta
@@ -79,8 +80,27 @@ def fmt_long_date(dt: datetime) -> str:
     return f"{dt.strftime('%A, %B')} {dt.day}, {dt.year}"
 
 
+def leap_age_minimum(choice: str) -> str:
+    """
+    Map the form's Age Restriction wording onto Leap's `age_minimum`.
+
+    Leap stores this as free text and the existing catalogue is inconsistent
+    ('16+', '18', '18+', '0', 'All Ages'), so normalise to the most common
+    'N+' form. Returns '' for anything we can't map, which leaves the
+    attribute off the payload rather than writing a guess.
+    """
+    choice = (choice or "").strip()
+    if not choice or choice.startswith("Other"):
+        return ""
+    if choice == "All Ages":
+        return "All Ages"
+    m = re.match(r"^(\d+)\s+and over$", choice, re.I)
+    return f"{m.group(1)}+" if m else ""
+
+
 def create_leap_event(show: dict, start_dt: datetime, end_dt: datetime,
-                      venue_id: str = "", series_id: str = "") -> dict:
+                      venue_id: str = "", series_id: str = "",
+                      age_minimum: str = "") -> dict:
     """
     Step 1: POST /events — creates the event shell.
     Returns the full API response dict.
@@ -110,6 +130,8 @@ def create_leap_event(show: dict, start_dt: datetime, end_dt: datetime,
             },
         }
     }
+    if age_minimum:
+        payload["data"]["attributes"]["age_minimum"] = age_minimum
     if series_id:
         payload["data"]["relationships"]["series"] = {
             "data": {"type": "series", "id": str(series_id)}
@@ -448,6 +470,7 @@ def create_event():
                 show, start_dt, end_dt,
                 venue_id=data.get("event_venue_id") or "",
                 series_id=data.get("series_id") or "",
+                age_minimum=leap_age_minimum(data.get("age_restriction")),
             )
             leap_event_id = event_resp.get("data", {}).get("id")
             ticket_url = extract_ticket_url(event_resp)

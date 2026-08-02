@@ -43,39 +43,63 @@ but that currently comes back empty — see **Current status** below.
 
 ## Current status
 
-The app is complete but **not yet able to create events** — one credential is
-missing. Picking this up:
+The credentials that were blocking event creation are resolved. `.env` needs
+`LEAP_SELLER_ID=18862` (Arcade Comedy Theater) and a default `LEAP_VENUE_ID`
+(47341 is a reasonable pick — see Venues below).
 
-**Working**
-
-- The Leap Integration Token authenticates (sent as the `X-API-Token` header).
-- `GET /venues` returns the full venue list, so `/api/venues` works.
-
-**Blocked — `LEAP_SELLER_ID` is unknown**
-
-`GET /sellers` returns `{"data":[]}` for our token even though the same token
-authenticates fine against `/venues` (a bad token gives 401, so this is an
-empty result, not an auth failure). `app.py` puts the seller ID in the
-`relationships` block of every event create, so nothing can be created until
-it's found. Things to try:
+Finding the seller ID was awkward enough to write down: `GET /sellers` returns
+`{"data":[]}` for our token even though the same token reads `/venues` fine, so
+the seller is not discoverable the obvious way. It *is* reachable through any
+venue's relationship:
 
 ```bash
-# the sellers relationship hanging off any venue
 curl -H "X-API-Token: $LEAP_API_TOKEN" -H "Accept: application/vnd.api+json" \
   https://www.showclix.com/api/venues/47341/sellers
 ```
 
-Failing that, the seller ID is visible in the admin UI URL at
-<https://admin.leapevents.com>, or Leap support can widen the token's scope.
+`get_leap_token.py` still can't fill `LEAP_SELLER_ID` in automatically for the
+same reason — set it by hand.
 
-**Gotchas already found**
+**Known gotchas**
 
-- `GET /series` returns 404 — that endpoint doesn't exist on this API host.
-  `/api/series` catches it and returns an empty list, so it's harmless.
-- The venue list contains duplicates: *Arcade Comedy Theater: Downstairs* is
-  both `47341` and `82097`, and Upstairs is both `49108` and `86691`. There's
-  also a `DELETE ME` venue at `47342`. Confirm which one has live events
-  (`/venues/<id>/events`) before setting `LEAP_VENUE_ID`.
+- `GET /series` returns 404. That endpoint doesn't exist on this API host;
+  `/api/series` catches it and returns an empty list, so the Series picker
+  simply stays empty.
+- The form writes `Time of Show for Calendar`, which is not a column on the
+  Schedule table — see **Airtable fields**.
+
+### Venues
+
+Nine of the fifteen venues on the account have **no future events** and are
+cluttering the picker. Worth confirming with whoever books shows before
+retiring them in Leap:
+
+| ID | events | future | last used | name |
+|---|---|---|---|---|
+| 75945 | 1784 | 153 | 2026-12-31 | Concessions/Merch |
+| 86691 | 110 | 94 | 2026-12-26 | Arcade Comedy Theater: Upstairs Stage |
+| 47341 | 1269 | 26 | 2027-01-02 | Arcade Comedy Theater: Downstairs |
+| 82097 | 572 | 11 | 2027-01-02 | Arcade Comedy Theater: Downstairs |
+| 47874 | 1254 | 5 | 2026-11-08 | Arcade Comedy Theater: Downstairs Stage |
+| 49109 | 56 | 2 | 2026-09-14 | Arcade Comedy Theater Lounge |
+| 49108 | 1812 | 0 | 2026-07-10 | Arcade Comedy Theater: UPSTAIRS |
+| 19545 | 1270 | 0 | 2019-11-21 | Highmark Caring Place |
+| 47342 | 942 | 0 | 2022-12-10 | DELETE ME |
+| 67459 | 293 | 0 | 2021-11-14 | Trust Oasis |
+| 21431 | 74 | 0 | 2019-06-06 | The 707 Academy |
+| 27619 | 56 | 0 | 2024-02-06 | 820 Liberty Avenue |
+| 69473 | 4 | 0 | 2021-08-14 | Allegheny Overlook Stage |
+| 74580 | 1 | 0 | 2022-09-10 | Backyard |
+| 79133 | 1 | 0 | 2023-11-03 | Liberty Magic |
+
+Two things to settle:
+
+- **49108 "UPSTAIRS" looks superseded.** It carried 1812 events but stopped on
+  2026-07-10, right as 86691 "Upstairs Stage" picked up. Almost certainly a
+  migration that left the old entry behind.
+- **Both "Downstairs" entries are live.** 47341 and 82097 have the same name and
+  the same 85 capacity, and both have events into January 2027. That's a real
+  split, not a dead twin — someone is picking each. Worth merging on one.
 
 ## Running
 
@@ -134,10 +158,42 @@ succeed — but either recreate that column in Airtable or delete the line in
 
 ## Editing shows
 
-Use the **Add Show to Catalog** tab, or edit `shows.json` by hand. Each show
-has: `name`, `slug`, `description`, `short_description`, `default_price`,
-`default_capacity`, `default_duration_minutes`, `tags`, and optionally
-`image_url`.
+Each show has: `name`, `slug`, `description`, `short_description`,
+`default_price`, `default_capacity`, `default_duration_minutes`, `tags`, and
+optionally `image_url`.
+
+**The Add Show tab only adds.** `POST /shows` appends to `shows.json` and
+rejects a slug that already exists with a 409 — there is no edit or delete
+route, and no UI for changing a show that is already in the catalogue. To fix a
+description, price or image on an existing show you have to edit `shows.json`
+by hand and restart. That is the most obvious missing feature in this tool.
+
+## What gets stored in Leap
+
+`POST /create` builds the event from the catalogue entry plus the form:
+
+| Leap attribute | Source |
+|---|---|
+| `name` | Show name, or the Title Override |
+| `description` | Catalogue description, or the Description Override |
+| `inventory` | Catalogue capacity, or the Capacity Override |
+| `start` / `end` | Date + showtime, plus the catalogue duration |
+| `age_minimum` | The Age Restriction dropdown |
+| `status` | Always `active` |
+| seller / venue / series | `LEAP_SELLER_ID`, the venue picker, the series picker |
+
+A single "General Admission" price level is then attached at the catalogue
+price (or the Price Override).
+
+Leap stores `age_minimum` as free text and the existing catalogue is
+inconsistent about it — `16+`, `18`, `18+`, `0`, `All Ages` all appear — so
+`leap_age_minimum()` normalises the form's wording to the most common `N+`
+form. "Other (Please Specify)" maps to nothing and leaves the attribute off the
+payload rather than writing a guess.
+
+Leap accepts plenty this form doesn't set — `category`, `doors_open_time`,
+`ticket_note`, `url`, `sales_open` / `sales_close`, `image`, `short_name`.
+Worth a look if any of those should stop being set by hand in the Leap admin.
 
 ## After creation
 
