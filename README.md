@@ -121,7 +121,8 @@ It binds to `0.0.0.0`, so any machine on the network can reach it at
 | `GET /api/venues` | Venues from your Leap account (frontend falls back to a hardcoded list if unavailable) |
 | `GET /api/series` | Series from your Leap account |
 | `GET /api/airtable/fields` | Writable Schedule columns + their options, read from the live base schema (cached) |
-| `POST /shows` | Append a new show to `shows.json` |
+| `POST /shows` | Append a new show to `shows.json` (409 if the slug exists) |
+| `PUT /shows/<slug>` | Update a show already in `shows.json` (404 unknown, 409 slug collision) |
 | `POST /create` | Create the Leap event + price level, return ticket URL |
 
 ## Airtable fields
@@ -162,11 +163,23 @@ Each show has: `name`, `slug`, `description`, `short_description`,
 `default_price`, `default_capacity`, `default_duration_minutes`, `tags`, and
 optionally `image_url`.
 
-**The Add Show tab only adds.** `POST /shows` appends to `shows.json` and
-rejects a slug that already exists with a 409 — there is no edit or delete
-route, and no UI for changing a show that is already in the catalogue. To fix a
-description, price or image on an existing show you have to edit `shows.json`
-by hand and restart. That is the most obvious missing feature in this tool.
+The second tab handles both cases. Its **Edit or Create** picker lists every
+show in the catalogue: choose one to load it into the form and the button
+becomes *Save Changes*, or leave it on *New show* to add one.
+
+- Adding uses `POST /shows`, which 409s on a slug that already exists.
+- Editing uses `PUT /shows/<slug>`, matched on the show's current slug.
+
+Renaming is allowed — both the name and the slug can change, and the in-memory
+catalogue is rebuilt so a rename doesn't leave the old entry behind. A slug that
+would collide with a different show is rejected with a 409. Typing in the name
+field does not rewrite the slug of an already-saved show, since the slug is the
+identifier the update matches on and ghostlight keys its description overrides
+off it too.
+
+There is deliberately **no delete route** — removing a show from the catalogue
+would break nothing in Airtable or Leap, but nothing here needs it yet. Drop the
+entry from `shows.json` by hand if you really need to.
 
 ## What gets stored in Leap
 

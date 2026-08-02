@@ -640,6 +640,18 @@
   ══════════════════════════════════════════ -->
   <div id="tab-add-show" class="tab-panel">
 
+    <!-- Pick what we're working on -->
+    <div class="card">
+      <div class="card-title">Edit or Create</div>
+      <div class="field">
+        <label for="ns_edit_target">Show</label>
+        <select id="ns_edit_target" onchange="onEditTargetChange()">
+          <option value="">— New show —</option>
+        </select>
+        <div class="field-hint">Pick an existing show to load and edit it, or leave this on “New show” to add one.</div>
+      </div>
+    </div>
+
     <!-- Identity -->
     <div class="card">
       <div class="card-title">① Identity</div>
@@ -835,19 +847,28 @@ fetch('shows.json')
   .then(data => {
     showCatalog = data.shows;
     showCatalog.forEach(s => catalogByName[s.name] = s);
-    const sel = document.getElementById('show_name');
-    sel.innerHTML = '<option value="">— Select a show —</option>';
-    showCatalog.forEach(s => {
-      const opt = document.createElement('option');
-      opt.value = s.name;
-      opt.textContent = s.name;
-      sel.appendChild(opt);
-    });
+    refreshShowDropdown();
+    fillEditTargets();
   })
   .catch(() => {
     document.getElementById('show_name').innerHTML =
       '<option value="">⚠ Could not load shows</option>';
   });
+
+// Rebuild the ① Show picker from showCatalog, keeping the current choice.
+function refreshShowDropdown() {
+  const sel = document.getElementById('show_name');
+  if (!sel) return;
+  const keep = sel.value;
+  sel.innerHTML = '<option value="">— Select a show —</option>';
+  [...showCatalog].sort((a, b) => a.name.localeCompare(b.name)).forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.name;
+    opt.textContent = s.name;
+    sel.appendChild(opt);
+  });
+  if (keep) sel.value = keep;
+}
 
 // ── Load Leap venues from backend ──
 function fillVenueFallback() {
@@ -1102,7 +1123,68 @@ function resultRow(status, label, value) {
 // ─────────────────────────────────────────
 //  TAB 2: ADD SHOW — slug + tags
 // ─────────────────────────────────────────
+// null while adding; the show's saved slug while editing one.
+let editingSlug = null;
+
+const SHOW_FORM_FIELDS = {
+  ns_name: 'name', ns_slug: 'slug', ns_short_description: 'short_description',
+  ns_description: 'description', ns_price: 'default_price',
+  ns_capacity: 'default_capacity', ns_duration: 'default_duration_minutes',
+  ns_image_url: 'image_url',
+};
+
+function fillEditTargets() {
+  const sel = document.getElementById('ns_edit_target');
+  if (!sel) return;
+  const keep = sel.value;
+  sel.innerHTML = '<option value="">— New show —</option>';
+  [...showCatalog].sort((a, b) => a.name.localeCompare(b.name)).forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.slug;
+    o.textContent = s.name;
+    sel.appendChild(o);
+  });
+  if (keep) sel.value = keep;
+}
+
+function clearShowForm() {
+  Object.keys(SHOW_FORM_FIELDS).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  currentTags = [];
+  renderTags();
+}
+
+function onEditTargetChange() {
+  const slug = document.getElementById('ns_edit_target').value;
+  const btn = document.getElementById('add_show_btn');
+  document.getElementById('show_result').style.display = 'none';
+  document.getElementById('show_error_box').style.display = 'none';
+
+  if (!slug) {
+    editingSlug = null;
+    clearShowForm();
+    btn.textContent = 'Add Show to Catalog';
+    return;
+  }
+
+  const show = showCatalog.find(x => x.slug === slug);
+  if (!show) return;
+  editingSlug = slug;
+  Object.entries(SHOW_FORM_FIELDS).forEach(([id, key]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = show[key] ?? '';
+  });
+  currentTags = [...(show.tags || [])];
+  renderTags();
+  btn.textContent = 'Save Changes';
+}
+
 function autoSlug() {
+  // Don't rewrite the slug of a show that's already saved — it's the
+  // identifier the update is matched on, and ghostlight keys off it too.
+  if (editingSlug !== null) return;
   const name = document.getElementById('ns_name').value;
   document.getElementById('ns_slug').value = name
     .toLowerCase()
@@ -1193,7 +1275,7 @@ async function submitAddShow() {
     return;
   }
 
-  // Try POST /shows — show JSON either way
+  const isEdit = editingSlug !== null;
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>Saving…';
 
@@ -1201,21 +1283,30 @@ async function submitAddShow() {
   let serverError = null;
 
   try {
-    const resp = await fetch('/shows', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newShow),
-    });
+    const resp = await fetch(
+      isEdit ? `/shows/${encodeURIComponent(editingSlug)}` : '/shows',
+      {
+        method: isEdit ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newShow),
+      }
+    );
     if (resp.ok) {
       serverSuccess = true;
-      // Refresh the dropdown with the new show
+      if (isEdit) {
+        const i = showCatalog.findIndex(x => x.slug === editingSlug);
+        const oldName = i >= 0 ? showCatalog[i].name : null;
+        if (i >= 0) showCatalog[i] = newShow; else showCatalog.push(newShow);
+        // A rename leaves a stale key behind, since the lookup is by name.
+        if (oldName && oldName !== newShow.name) delete catalogByName[oldName];
+        editingSlug = newShow.slug;
+      } else {
+        showCatalog.push(newShow);
+      }
       catalogByName[newShow.name] = newShow;
-      showCatalog.push(newShow);
-      const sel = document.getElementById('show_name');
-      const opt = document.createElement('option');
-      opt.value = newShow.name;
-      opt.textContent = newShow.name;
-      sel.appendChild(opt);
+      refreshShowDropdown();
+      fillEditTargets();
+      document.getElementById('ns_edit_target').value = isEdit ? newShow.slug : '';
     } else {
       const body = await resp.json().catch(() => ({}));
       serverError = body.error || `Server responded with ${resp.status}`;
@@ -1224,13 +1315,13 @@ async function submitAddShow() {
     serverError = err.message;
   } finally {
     btn.disabled = false;
-    btn.innerHTML = 'Add Show to Catalog';
+    btn.innerHTML = editingSlug !== null ? 'Save Changes' : 'Add Show to Catalog';
   }
 
-  renderAddShowResult(newShow, serverSuccess, serverError);
+  renderAddShowResult(newShow, serverSuccess, serverError, isEdit);
 }
 
-function renderAddShowResult(show, serverSuccess, serverError) {
+function renderAddShowResult(show, serverSuccess, serverError, isEdit) {
   const resultDiv = document.getElementById('show_result');
   resultDiv.style.display = 'block';
 
@@ -1239,7 +1330,7 @@ function renderAddShowResult(show, serverSuccess, serverError) {
   let html = '';
   if (serverSuccess) {
     html += `<div class="result-card success">
-      <div class="result-title">✓ Show Added to Catalog</div>
+      <div class="result-title">${isEdit ? '✓ Show Updated' : '✓ Show Added to Catalog'}</div>
       ${resultRow('ok', 'Name', `<strong>${show.name}</strong>`)}
       ${resultRow('ok', 'Slug', `<span style="font-family:monospace">${show.slug}</span>`)}
       ${resultRow('ok', 'Price', `$${show.default_price.toFixed(2)}`)}

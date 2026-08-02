@@ -388,31 +388,70 @@ def api_series():
         return jsonify({"series": [], "error": str(e)}), 200
 
 
+def validate_show(show: dict) -> list:
+    errors = []
+    if not show.get("name"):
+        errors.append("Show name is required.")
+    if not show.get("slug"):
+        errors.append("Slug is required.")
+    if not show.get("short_description"):
+        errors.append("Short description is required.")
+    return errors
+
+
+def write_catalog(data: dict) -> None:
+    """Persist shows.json and rebuild the in-memory catalog.
+
+    Rebuilt rather than patched because a show can be renamed, and the
+    catalog is keyed by name — patching would leave the old key behind.
+    """
+    global SHOW_CATALOG
+    with open(SHOWS_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+        f.write("\n")  # keep the trailing newline so saves don't churn the diff
+    SHOW_CATALOG = {s["name"]: s for s in data["shows"]}
+
+
 @app.route("/shows", methods=["POST"])
 def add_show():
     """Append a new show to shows.json and refresh the in-memory catalog."""
     new_show = request.get_json() or {}
-    errors = []
-    if not new_show.get("name"):
-        errors.append("Show name is required.")
-    if not new_show.get("slug"):
-        errors.append("Slug is required.")
-    if not new_show.get("short_description"):
-        errors.append("Short description is required.")
+    errors = validate_show(new_show)
     if errors:
         return jsonify({"error": " ".join(errors)}), 400
 
     with open(SHOWS_FILE, "r", encoding="utf-8") as f:
         data = json.load(f)
-    if any(s["slug"] == new_show["slug"] for s in data["shows"]):
+    if any(s.get("slug") == new_show["slug"] for s in data["shows"]):
         return jsonify({"error": f"Slug '{new_show['slug']}' already exists."}), 409
 
     data["shows"].append(new_show)
-    with open(SHOWS_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
-
-    SHOW_CATALOG[new_show["name"]] = new_show
+    write_catalog(data)
     return jsonify({"success": True, "show": new_show}), 201
+
+
+@app.route("/shows/<slug>", methods=["PUT"])
+def update_show(slug: str):
+    """Replace a show already in the catalog, found by its current slug."""
+    updated = request.get_json() or {}
+    errors = validate_show(updated)
+    if errors:
+        return jsonify({"error": " ".join(errors)}), 400
+
+    with open(SHOWS_FILE, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    idx = next((i for i, s in enumerate(data["shows"]) if s.get("slug") == slug), None)
+    if idx is None:
+        return jsonify({"error": f"No show with slug '{slug}'."}), 404
+
+    # Renaming the slug is allowed, but it must not land on another show.
+    if updated["slug"] != slug and any(s.get("slug") == updated["slug"] for s in data["shows"]):
+        return jsonify({"error": f"Slug '{updated['slug']}' already exists."}), 409
+
+    data["shows"][idx] = updated
+    write_catalog(data)
+    return jsonify({"success": True, "show": updated}), 200
 
 
 @app.route("/create", methods=["POST"])
