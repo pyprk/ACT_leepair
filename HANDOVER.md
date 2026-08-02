@@ -166,8 +166,11 @@ every client, which is why the form never touches them.
 - [x] ~~Reconcile the dev and package plugin copies~~ — done 2026-08-02
 - [ ] Add the `GL_DESC_DIR` guard block to the **dev** `ghostlight.php` once
       the appdata share allows writes again (cosmetic — the default matches)
-- [ ] Put `ghostlight-wp-plugin/` under version control; it is now the
-      reconciled source of truth and lives on an unbacked share
+- [ ] Diff the ghostlight repo against what is actually running on the
+      production host; nobody has had shell access to confirm they match
+- [x] ~~Put the plugin under version control~~ — https://github.com/pyprk/ghostlight
+      now holds both the plugin and `ghostlight.py`, at
+      `projects/work/arcade/ghostlight/`
 - [ ] When deploying to production, add the `GL_DESC_DIR` define to
       `wp-config.php` FIRST — see step 0 of `ghostlight-deploy/DEPLOY.md`
 - [ ] `.env` currently points at wp.deadframe.xyz with the credentials from
