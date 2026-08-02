@@ -111,7 +111,7 @@ def create_leap_event(show: dict, start_dt: datetime, end_dt: datetime,
             "type": "events",
             "attributes": {
                 "name": show["name"],
-                "description": show["description"],
+                "description": show.get("description", ""),
                 "inventory": show["default_capacity"],
                 "start": start_dt.isoformat(),
                 "end": end_dt.isoformat(),
@@ -318,6 +318,94 @@ def build_airtable_field_spec():
     return spec, writable
 
 
+# ── Show descriptions (shared with the ghostlight WordPress plugin) ───────────
+# A show's evergreen description and poster live in the plugin's description
+# store, which is the same directory ghostlight.py reads. This app used to keep
+# its own copy in shows.json and the two drifted, so it now reads and writes
+# that store instead. shows.json keeps only what ghostlight has no use for:
+# short_description, price, capacity, duration, tags.
+WP_URL = os.getenv("WP_URL", "https://www.arcadecomedytheater.com").rstrip("/")
+WP_USER = os.getenv("WP_USER", "")
+WP_APP_PW = os.getenv("WP_APP_PW", "")
+DESC_ENDPOINT = "/wp-json/ghostlight/v1/descriptions"
+
+# Read-through cache, so an unreachable WordPress degrades to stale copy rather
+# than blocking event creation. Not a second source of truth — never edited.
+DESC_CACHE_FILE = CURRENT_DIR / "descriptions.cache.json"
+
+
+def wp_auth():
+    return (WP_USER, WP_APP_PW) if WP_USER and WP_APP_PW else None
+
+
+def desc_cache_read() -> dict:
+    try:
+        with open(DESC_CACHE_FILE, "r", encoding="utf-8") as f:
+            return json.load(f).get("descriptions", {})
+    except Exception:
+        return {}
+
+
+def desc_cache_write(mapping: dict) -> None:
+    try:
+        with open(DESC_CACHE_FILE, "w", encoding="utf-8") as f:
+            json.dump(
+                {"fetched_at": datetime.now().isoformat(timespec="seconds"),
+                 "descriptions": mapping},
+                f, indent=2, ensure_ascii=False,
+            )
+            f.write("\n")
+    except Exception:
+        pass  # a cache we can't write is not worth failing a request over
+
+
+def fetch_descriptions():
+    """(mapping, warning). Falls back to the cache when WordPress is unreachable."""
+    if not wp_auth():
+        return desc_cache_read(), "WP_USER / WP_APP_PW not set — using cached descriptions."
+    try:
+        resp = requests.get(f"{WP_URL}{DESC_ENDPOINT}", auth=wp_auth(), timeout=20)
+        resp.raise_for_status()
+        mapping = {
+            d["slug"]: {
+                "description": d.get("description", ""),
+                "image_url": d.get("image_url", ""),
+            }
+            for d in resp.json().get("descriptions", [])
+        }
+        desc_cache_write(mapping)
+        return mapping, None
+    except Exception as e:
+        return desc_cache_read(), f"WordPress unreachable ({e}) — using cached descriptions."
+
+
+def save_description(slug: str, description: str, image_url: str):
+    """Write through to the plugin. Returns (ok, error)."""
+    if not wp_auth():
+        return False, "WP_USER / WP_APP_PW not set — description not saved to WordPress."
+    if not (description or image_url):
+        return True, None  # nothing to store
+    try:
+        resp = requests.post(
+            f"{WP_URL}{DESC_ENDPOINT}/{slug}",
+            auth=wp_auth(),
+            json={"description": description, "image_url": image_url},
+            timeout=20,
+        )
+        if resp.status_code not in (200, 201):
+            return False, f"WordPress {resp.status_code}: {resp.text[:200]}"
+        desc_cache_write({**desc_cache_read(),
+                          slug: {"description": description, "image_url": image_url}})
+        return True, None
+    except Exception as e:
+        return False, f"WordPress unreachable ({e})"
+
+
+def show_description(slug: str) -> str:
+    """The evergreen description for a slug, from the shared store."""
+    return (fetch_descriptions()[0].get(slug) or {}).get("description", "")
+
+
 # ── Routes ────────────────────────────────────────────────────────────────────
 @app.route("/")
 def index():
@@ -342,6 +430,13 @@ def show_data(show_name: str):
     if not show:
         return jsonify({"error": "Show not found"}), 404
     return jsonify(show)
+
+
+@app.route("/api/descriptions")
+def api_descriptions():
+    """The shared description store, keyed by slug."""
+    mapping, warning = fetch_descriptions()
+    return jsonify({"descriptions": mapping, "warning": warning})
 
 
 @app.route("/api/airtable/fields")
@@ -399,6 +494,36 @@ def validate_show(show: dict) -> list:
     return errors
 
 
+def split_show_payload(payload: dict):
+    """
+    Separate a submitted show into the part shows.json owns and the part the
+    WordPress description store owns. Returns (catalog_entry, description,
+    image_url) — keeping description/image_url out of shows.json is what stops
+    the two stores drifting again.
+    """
+    show = {k: v for k, v in payload.items() if k not in ("description", "image_url")}
+    return show, (payload.get("description") or "").strip(), (payload.get("image_url") or "").strip()
+
+
+def keep_locally(show: dict, description: str, image_url: str, saved_remotely: bool) -> None:
+    """
+    Put the shared fields back into the catalog entry when the shared store
+    would not take them.
+
+    Without this, editing a show while WordPress is unreachable — or before
+    migrate_descriptions.py has run — would drop the description from
+    shows.json without it landing anywhere else. Once the store accepts a
+    write, the fields stop being written locally and the duplicate disappears
+    on its own.
+    """
+    if saved_remotely:
+        return
+    if description:
+        show["description"] = description
+    if image_url:
+        show["image_url"] = image_url
+
+
 def write_catalog(data: dict) -> None:
     """Persist shows.json and rebuild the in-memory catalog.
 
@@ -415,28 +540,36 @@ def write_catalog(data: dict) -> None:
 @app.route("/shows", methods=["POST"])
 def add_show():
     """Append a new show to shows.json and refresh the in-memory catalog."""
-    new_show = request.get_json() or {}
-    errors = validate_show(new_show)
+    payload = request.get_json() or {}
+    errors = validate_show(payload)
     if errors:
         return jsonify({"error": " ".join(errors)}), 400
+
+    new_show, description, image_url = split_show_payload(payload)
 
     with open(SHOWS_FILE, "r", encoding="utf-8") as f:
         data = json.load(f)
     if any(s.get("slug") == new_show["slug"] for s in data["shows"]):
         return jsonify({"error": f"Slug '{new_show['slug']}' already exists."}), 409
 
+    ok, desc_error = save_description(new_show["slug"], description, image_url)
+    keep_locally(new_show, description, image_url, ok)
+
     data["shows"].append(new_show)
     write_catalog(data)
-    return jsonify({"success": True, "show": new_show}), 201
+    return jsonify({"success": True, "show": new_show,
+                    "description_saved": ok, "description_error": desc_error}), 201
 
 
 @app.route("/shows/<slug>", methods=["PUT"])
 def update_show(slug: str):
     """Replace a show already in the catalog, found by its current slug."""
-    updated = request.get_json() or {}
-    errors = validate_show(updated)
+    payload = request.get_json() or {}
+    errors = validate_show(payload)
     if errors:
         return jsonify({"error": " ".join(errors)}), 400
+
+    updated, description, image_url = split_show_payload(payload)
 
     with open(SHOWS_FILE, "r", encoding="utf-8") as f:
         data = json.load(f)
@@ -449,9 +582,13 @@ def update_show(slug: str):
     if updated["slug"] != slug and any(s.get("slug") == updated["slug"] for s in data["shows"]):
         return jsonify({"error": f"Slug '{updated['slug']}' already exists."}), 409
 
+    ok, desc_error = save_description(updated["slug"], description, image_url)
+    keep_locally(updated, description, image_url, ok)
+
     data["shows"][idx] = updated
     write_catalog(data)
-    return jsonify({"success": True, "show": updated}), 200
+    return jsonify({"success": True, "show": updated,
+                    "description_saved": ok, "description_error": desc_error}), 200
 
 
 @app.route("/create", methods=["POST"])
@@ -471,6 +608,8 @@ def create_event():
     show = dict(SHOW_CATALOG.get(show_name, {}))
     if not show:
         return jsonify({"success": False, "errors": [f"Unknown show: {show_name}"]}), 400
+    # The evergreen description lives in the shared store, not shows.json.
+    show["description"] = show_description(show.get("slug", ""))
     if data.get("custom_title"):
         show["name"] = data["custom_title"].strip()
     if data.get("custom_description"):

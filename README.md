@@ -121,6 +121,7 @@ It binds to `0.0.0.0`, so any machine on the network can reach it at
 | `GET /api/venues` | Venues from your Leap account (frontend falls back to a hardcoded list if unavailable) |
 | `GET /api/series` | Series from your Leap account |
 | `GET /api/airtable/fields` | Writable Schedule columns + their options, read from the live base schema (cached) |
+| `GET /api/descriptions` | Evergreen descriptions + posters from the Ghostlight plugin store, keyed by slug |
 | `POST /shows` | Append a new show to `shows.json` (409 if the slug exists) |
 | `PUT /shows/<slug>` | Update a show already in `shows.json` (404 unknown, 409 slug collision) |
 | `POST /create` | Create the Leap event + price level, return ticket URL |
@@ -159,9 +160,20 @@ succeed — but either recreate that column in Airtable or delete the line in
 
 ## Editing shows
 
-Each show has: `name`, `slug`, `description`, `short_description`,
-`default_price`, `default_capacity`, `default_duration_minutes`, `tags`, and
-optionally `image_url`.
+`shows.json` holds `name`, `slug`, `short_description`, `default_price`,
+`default_capacity`, `default_duration_minutes` and `tags`.
+
+`description` and `image_url` are **not** kept here. They live in the
+Ghostlight plugin's description store — the same `<slug>.json` files its
+Descriptions tab edits and `ghostlight.py` reads — because the website needs
+them too and two copies drifted apart. The form still edits them; it reads and
+writes them through `/api/descriptions`, which proxies the plugin's REST route.
+See `wordpress-plugin/` for that side, and `HANDOVER.md` for migration status.
+
+If the plugin is unreachable the app falls back to `descriptions.cache.json`
+(gitignored, never edited) and warns in the form. Saving a show while it is
+unreachable keeps the description in `shows.json` rather than losing it, and
+that duplicate clears itself once the store accepts a write.
 
 The second tab handles both cases. Its **Edit or Create** picker lists every
 show in the catalogue: choose one to load it into the form and the button
@@ -188,10 +200,10 @@ entry from `shows.json` by hand if you really need to.
 | Leap attribute | Source |
 |---|---|
 | `name` | Show name, or the Title Override |
-| `description` | Catalogue description, or the Description Override |
 | `inventory` | Catalogue capacity, or the Capacity Override |
 | `start` / `end` | Date + showtime, plus the catalogue duration |
 | `age_minimum` | The Age Restriction dropdown |
+| `description` | The shared description store (or the Description Override) |
 | `status` | Always `active` |
 | seller / venue / series | `LEAP_SELLER_ID`, the venue picker, the series picker |
 

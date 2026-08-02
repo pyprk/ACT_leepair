@@ -264,6 +264,16 @@
   }
   .link-filter { margin-bottom: 6px; }
 
+  .desc-warning {
+    background: #2a2010;
+    border: 1px solid var(--warn);
+    border-radius: var(--radius);
+    color: var(--warn);
+    font-size: 12px;
+    padding: 9px 12px;
+    margin-bottom: 16px;
+  }
+
   .saved-fields {
     margin-top: 12px;
     border-top: 1px solid var(--border);
@@ -669,6 +679,7 @@
     <!-- Descriptions -->
     <div class="card">
       <div class="card-title">② Descriptions</div>
+      <div id="desc_warning" class="desc-warning" style="display:none"></div>
       <div class="field">
         <label for="ns_short_description">Short Description</label>
         <input type="text" id="ns_short_description" placeholder="One-liner shown in listings…">
@@ -676,6 +687,7 @@
       <div class="field">
         <label for="ns_description">Full Description <span class="optional">(optional)</span></label>
         <textarea id="ns_description" style="min-height:140px" placeholder="Full show description shown on the event page…"></textarea>
+        <div class="field-hint">Shared with the website — stored in the Ghostlight plugin's description store, the same copy its Descriptions tab edits. Saving here updates both.</div>
       </div>
     </div>
 
@@ -855,6 +867,34 @@ fetch('shows.json')
       '<option value="">⚠ Could not load shows</option>';
   });
 
+// ── Shared description store (the ghostlight WordPress plugin) ──
+// A show's evergreen description and poster live there, not in shows.json,
+// so the ticket page and the website can't drift apart.
+let showDescriptions = {};
+let descriptionsWarning = null;
+
+function sharedDesc(slug) {
+  return showDescriptions[slug] || { description: '', image_url: '' };
+}
+
+fetch('/api/descriptions')
+  .then(r => r.json())
+  .then(d => {
+    showDescriptions = d.descriptions || {};
+    descriptionsWarning = d.warning || null;
+    if (descriptionsWarning) {
+      const box = document.getElementById('desc_warning');
+      if (box) {
+        box.textContent = descriptionsWarning;
+        box.style.display = 'block';
+      }
+    }
+    // the ① preview may already be showing a show
+    const cur = document.getElementById('show_name');
+    if (cur && cur.value) onShowChange();
+  })
+  .catch(() => {});
+
 // Rebuild the ① Show picker from showCatalog, keeping the current choice.
 function refreshShowDropdown() {
   const sel = document.getElementById('show_name');
@@ -966,7 +1006,7 @@ function onShowChange() {
   document.getElementById('prev_meta').textContent =
     `$${show.default_price.toFixed(2)} · ${show.default_capacity} capacity · ${show.default_duration_minutes} min`;
   document.getElementById('prev_desc').textContent =
-    show.description || '(No default description — fill in below)';
+    sharedDesc(show.slug).description || '(No description in the shared store yet)';
   preview.classList.add('visible');
   titleField.style.display = 'block';
   document.getElementById('override_price').placeholder = show.default_price.toFixed(2);
@@ -1172,9 +1212,12 @@ function onEditTargetChange() {
   const show = showCatalog.find(x => x.slug === slug);
   if (!show) return;
   editingSlug = slug;
+  // description and image_url come from the shared store, everything else
+  // from shows.json
+  const merged = { ...show, ...sharedDesc(slug) };
   Object.entries(SHOW_FORM_FIELDS).forEach(([id, key]) => {
     const el = document.getElementById(id);
-    if (el) el.value = show[key] ?? '';
+    if (el) el.value = merged[key] ?? '';
   });
   currentTags = [...(show.tags || [])];
   renderTags();
@@ -1281,6 +1324,7 @@ async function submitAddShow() {
 
   let serverSuccess = false;
   let serverError = null;
+  let descWarning = null;   // saved locally, but the shared store rejected it
 
   try {
     const resp = await fetch(
@@ -1304,6 +1348,12 @@ async function submitAddShow() {
         showCatalog.push(newShow);
       }
       catalogByName[newShow.name] = newShow;
+      showDescriptions[newShow.slug] = {
+        description: newShow.description || '',
+        image_url: newShow.image_url || '',
+      };
+      const body = await resp.json().catch(() => ({}));
+      if (body && body.description_saved === false) descWarning = body.description_error || 'unknown error';
       refreshShowDropdown();
       fillEditTargets();
       document.getElementById('ns_edit_target').value = isEdit ? newShow.slug : '';
@@ -1318,10 +1368,10 @@ async function submitAddShow() {
     btn.innerHTML = editingSlug !== null ? 'Save Changes' : 'Add Show to Catalog';
   }
 
-  renderAddShowResult(newShow, serverSuccess, serverError, isEdit);
+  renderAddShowResult(newShow, serverSuccess, serverError, isEdit, descWarning);
 }
 
-function renderAddShowResult(show, serverSuccess, serverError, isEdit) {
+function renderAddShowResult(show, serverSuccess, serverError, isEdit, descWarning) {
   const resultDiv = document.getElementById('show_result');
   resultDiv.style.display = 'block';
 
@@ -1336,6 +1386,9 @@ function renderAddShowResult(show, serverSuccess, serverError, isEdit) {
       ${resultRow('ok', 'Price', `$${show.default_price.toFixed(2)}`)}
       ${resultRow('ok', 'Capacity', show.default_capacity)}
       ${resultRow('ok', 'Duration', `${show.default_duration_minutes} min`)}
+      ${descWarning
+          ? resultRow('warn', 'Description', `Not saved to WordPress — ${escapeHtml(descWarning)}`)
+          : resultRow('ok', 'Description', 'Saved to the shared store')}
     </div>`;
   } else {
     html += `<div class="result-card partial">

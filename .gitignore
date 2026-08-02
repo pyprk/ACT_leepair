@@ -10,3 +10,6 @@ __pycache__/
 
 # CIFS/FUSE orphans left when a file is deleted while still open
 .fuse_hidden*
+
+# read-through cache of the WordPress description store
+descriptions.cache.json
